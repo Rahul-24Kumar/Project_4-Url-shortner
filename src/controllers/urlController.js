@@ -87,7 +87,7 @@ const urlShortner = async (req, res) => {
             longUrl: urlDetails.longUrl.trim(),
             shortUrl: urlDetails.shortUrl.trim()
         }
-        return res.status(200).send({ status: true, url: result })
+        return res.status(201).send({ status: true, url: result })
     }
     catch (error) {
         console.log(error)
