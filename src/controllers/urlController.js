@@ -34,6 +34,13 @@ const GET_ASYNC = promisify(redisClient.GET).bind(redisClient);
 
 const urlShortner = async (req, res) => {
     try {
+        //
+        let cachedData = await GET_ASYNC(`${longUrl}`)
+            if (cachedData) {
+                let parsedData = JSON.parse(cachedData)
+                return res.status(200).send(parsedData)
+            }
+        //
         let baseUrl = 'http://localhost:3000';
         
         let urlCode = shortid.generate().toLowerCase().substring(0,6);
@@ -47,6 +54,7 @@ const urlShortner = async (req, res) => {
         let urlFind = await urlModel.findOne({ longUrl: longUrl }).select({_id: 0, __v: 0, createdAt: 0, updatedAt: 0});
        
         if(urlFind) {
+            await SET_ASYNC(`${longUrl}`, JSON.stringify(urlFind))
             return res.status(200).send({status: true, message: "successfully", data: urlFind})
         }
 
