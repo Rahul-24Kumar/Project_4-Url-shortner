@@ -35,33 +35,35 @@ const GET_ASYNC = promisify(redisClient.GET).bind(redisClient);
 const urlShortner = async (req, res) => {
     try {
         //
+        let body = req.body;
+        let longUrl = body.longUrl;
+
         let cachedData = await GET_ASYNC(`${longUrl}`)
-            if (cachedData) {
-                let parsedData = JSON.parse(cachedData)
-                return res.status(200).send(parsedData)
-            }
-        //
+        if (cachedData) {
+            let parsedData = JSON.parse(cachedData)
+            return res.status(200).send(parsedData)
+        }
+
         let baseUrl = 'http://localhost:3000';
-        
-        let urlCode = shortid.generate().toLowerCase().substring(0,6);
+
+        let urlCode = shortid.generate().toLowerCase().substring(0, 6);
 
         // Math.random(urlCode).toLowerCase()
         // console.log(urlCode)
         //.Math.random().toLowerCase()
-        let body = req.body;
-        let longUrl = body.longUrl;
 
-        let urlFind = await urlModel.findOne({ longUrl: longUrl }).select({_id: 0, __v: 0, createdAt: 0, updatedAt: 0});
-       
-        if(urlFind) {
+        let urlFind = await urlModel.findOne({ longUrl: longUrl }).select({ _id: 0, __v: 0, createdAt: 0, updatedAt: 0 });
+
+        if (urlFind) {
             await SET_ASYNC(`${longUrl}`, JSON.stringify(urlFind))
-            return res.status(200).send({status: true, message: "successfully", data: urlFind})
+            return res.status(200).send({ status: true, message: "successfully", data: urlFind })
         }
 
         let shortUrl = baseUrl + '/' + urlCode;
         let data = { urlCode, longUrl, shortUrl } //packing
 
-        // Validation for BaseUrl :
+        //------------------------------------ Validation for BaseUrl ---------------------------------------
+        
         if (!(/^https?:\/\/\w/).test(baseUrl)) {
             return res.status(400).send({ status: false, message: "Please check your Base Url, Provide a valid One." })
         }
@@ -71,20 +73,18 @@ const urlShortner = async (req, res) => {
         }
 
 
-        // Validation for Long Url :
+        //----------------------------------- Validation for Long Url --------------------------------------
+
         if (!longUrl) {
             return res.status(400).send({ status: false, message: "Please Provide the URL" })
         }
-
-        // if (!Object.values(longUrl)) {
-        //     return res.status(400).send({ status: false, msg: "Please Provide the URL details" })
-        // }
 
         if (!(/https?:\/\/(www\.)?[-a-zA-Z0-9@:%.\+~#=]{1,256}\.[a-zA-Z0-9()]{1,6}\b([-a-zA-Z0-9()@:%\+.~#?&//=]*)/.test(longUrl))) {
             return res.status(400).send({ status: false, message: "Please provide a valid Url" })
         }
 
-        // Validation for Short Url :
+        //--------------------------------- Validation for Short Url  -----------------------------------------
+
         if (!shortUrl) {
             return res.status(400).send({ status: false, message: "No shortUrl found, please check again" })
         }
@@ -102,31 +102,30 @@ const urlShortner = async (req, res) => {
         return res.status(500).send({ status: false, msg: error.message })
     }
 }
+
+
+//--------------------------------------------------------------------------------------------------
+
 const getShortUrl = async function (req, res) {
     try {
         let urlCode = req.params.urlCode.trim()
         let cacheData = await GET_ASYNC(`${urlCode}`)
 
-        // if((req.params).length==0) {
-        //     return res.status(400).send({status: false, message: "Please Provide url code"})
-        // }
         if (cacheData) {
             let datatype = JSON.parse(cacheData)
-            //console.log(datatype)
+
             return res.status(302).redirect(datatype.longUrl)
         } else {
             const urlFindInDb = await urlModel.findOne({ urlCode: urlCode });
             if (urlFindInDb) {
                 await SET_ASYNC(`${urlCode}`, JSON.stringify(urlFindInDb))
                 return res.status(302).redirect(urlFindInDb.longUrl)
-            } else{
-                return res.status(404).send({ status:false,message:"no url found with this urlCode"})
+            } else {
+                return res.status(404).send({ status: false, message: "no url found with this urlCode" })
             }
-
         }
     }
     catch (err) {
-        //console.log(err);
         return res.status(500).send({ status: false, message: err.message })
     }
 }
@@ -134,6 +133,32 @@ const getShortUrl = async function (req, res) {
 
 module.exports.urlShortner = urlShortner;
 module.exports.getShortUrl = getShortUrl;
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 // const getUrl = async function (req, res) {
